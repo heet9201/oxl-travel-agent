@@ -1,4 +1,5 @@
 "use client";
+import ReactMarkdown from 'react-markdown';
 
 export default function ChatMessage({ message }) {
   const { role, content } = message;
@@ -23,7 +24,13 @@ export default function ChatMessage({ message }) {
       <div className="message-avatar">
         {role === "assistant" ? "🧭" : "👤"}
       </div>
-      <div className="message-content">{content}</div>
+      <div className="message-content">
+        {role === "assistant" ? (
+          <ReactMarkdown>{content}</ReactMarkdown>
+        ) : (
+          content
+        )}
+      </div>
     </div>
   );
 }
