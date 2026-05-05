@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# # MD files - only ignore generated md files
+# *.md
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
