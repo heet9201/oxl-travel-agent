@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 orchestrator = OrchestratorAgent()
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Main chat endpoint - processes user messages through the orchestrator."""
     try:

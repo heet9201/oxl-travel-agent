@@ -55,7 +55,7 @@ export default function Home() {
         setBudgetData(res.data);
       }
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please make sure the backend is running on port 8000 and try again." }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong while processing your request. Please try again." }]);
     }
     setLoading(false);
   };

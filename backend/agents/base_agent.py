@@ -20,13 +20,15 @@ class BaseAgent:
         # Configure NVIDIA NIM (OpenAI Client)
         self.nvidia_client = AsyncOpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
-            api_key=NVIDIA_API_KEY
+            api_key=NVIDIA_API_KEY,
+            timeout=15.0
         )
         
         # Configure Groq (OpenAI Client)
         self.groq_client = AsyncOpenAI(
             base_url="https://api.groq.com/openai/v1",
-            api_key=GROQ_API_KEY
+            api_key=GROQ_API_KEY,
+            timeout=10.0
         )
 
     async def _try_generate_with_model(self, model_name: str, prompt: str, is_json: bool = False) -> str:
