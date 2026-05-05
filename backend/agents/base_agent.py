@@ -1,6 +1,6 @@
 import google.generativeai as genai
 from openai import AsyncOpenAI
-from config import GEMINI_API_KEY, NVIDIA_API_KEY, MODEL_PRIORITY_LIST
+from config import GEMINI_API_KEY, NVIDIA_API_KEY, GROQ_API_KEY, MODEL_PRIORITY_LIST
 import json
 import re
 import logging
@@ -22,11 +22,17 @@ class BaseAgent:
             base_url="https://integrate.api.nvidia.com/v1",
             api_key=NVIDIA_API_KEY
         )
+        
+        # Configure Groq (OpenAI Client)
+        self.groq_client = AsyncOpenAI(
+            base_url="https://api.groq.com/openai/v1",
+            api_key=GROQ_API_KEY
+        )
 
     async def _try_generate_with_model(self, model_name: str, prompt: str, is_json: bool = False) -> str:
         """Attempt to generate response with a specific model."""
         try:
-            if "gemini" in model_name:
+            if model_name.startswith("gemini"):
                 model = genai.GenerativeModel(
                     model_name=model_name,
                     system_instruction=self.system_prompt,
@@ -34,17 +40,30 @@ class BaseAgent:
                 response = model.generate_content(prompt)
                 return response.text
             else:
-                # Use NVIDIA NIM
                 messages = [
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
                 ]
-                completion = await self.nvidia_client.chat.completions.create(
-                    model=model_name,
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=1024,
-                )
+                
+                if model_name.startswith("groq/"):
+                    actual_model = model_name.replace("groq/", "")
+                    completion = await self.groq_client.chat.completions.create(
+                        model=actual_model,
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=1024,
+                    )
+                elif model_name.startswith("nvidia/"):
+                    actual_model = model_name.replace("nvidia/", "")
+                    completion = await self.nvidia_client.chat.completions.create(
+                        model=actual_model,
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=1024,
+                    )
+                else:
+                    raise Exception(f"Unknown model prefix: {model_name}")
+
                 return completion.choices[0].message.content
         except Exception as e:
             logger.error(f"Model {model_name} failed in {self.name}: {str(e)}")
