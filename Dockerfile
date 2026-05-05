@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Install frontend dependencies
 COPY frontend/package.json frontend/package-lock.json frontend/
-RUN cd frontend && npm ci
+RUN cd frontend && npm install
 
 # Copy all source code
 COPY . .
