@@ -45,14 +45,19 @@ export default function Home() {
       setMessages((prev) => [...prev, { role: "assistant", content: res.reply }]);
       if (res.trip_context) setTripContext(res.trip_context);
 
+      // Store data and auto-switch to the relevant tab
       if (res.message_type === "flights" && res.data) {
         setFlightsData(res.data);
+        setActiveTab("flights");
       } else if (res.message_type === "hotels" && res.data) {
         setHotelsData(res.data);
+        setActiveTab("hotels");
       } else if (res.message_type === "itinerary" && res.data) {
         setItineraryData(res.data);
+        setActiveTab("itinerary");
       } else if (res.message_type === "budget" && res.data) {
         setBudgetData(res.data);
+        setActiveTab("budget");
       }
     } catch (err) {
       setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong while processing your request. Please try again." }]);

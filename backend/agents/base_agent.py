@@ -28,7 +28,7 @@ class BaseAgent:
         self.groq_client = AsyncOpenAI(
             base_url="https://api.groq.com/openai/v1",
             api_key=GROQ_API_KEY,
-            timeout=10.0
+            timeout=30.0
         )
 
     async def _try_generate_with_model(self, model_name: str, prompt: str, is_json: bool = False) -> str:
@@ -53,7 +53,7 @@ class BaseAgent:
                         model=actual_model,
                         messages=messages,
                         temperature=0.7,
-                        max_tokens=1024,
+                        max_tokens=4096,
                     )
                 elif model_name.startswith("nvidia/"):
                     actual_model = model_name.replace("nvidia/", "")
@@ -61,7 +61,7 @@ class BaseAgent:
                         model=actual_model,
                         messages=messages,
                         temperature=0.7,
-                        max_tokens=1024,
+                        max_tokens=4096,
                     )
                 else:
                     raise Exception(f"Unknown model prefix: {model_name}")

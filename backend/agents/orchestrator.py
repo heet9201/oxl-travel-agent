@@ -96,16 +96,26 @@ Respond as a helpful travel assistant. Be warm and ask what kind of trip they're
                 trip_context[key] = value
 
         # Step 2: Check if clarification is needed
-        if intent_data.get("needs_clarification", False):
+        # Only ask for clarification on truly essential missing info (e.g. destination)
+        # Don't block on optional fields like budget, travelers, preferences — agents have defaults
+        needs_destination = intent in ("flights", "hotels", "itinerary", "budget", "weather") and not trip_context.get("destination")
+        needs_origin_for_flights = intent == "flights" and not trip_context.get("origin") and not trip_context.get("destination")
+        
+        if needs_destination or needs_origin_for_flights:
             questions = intent_data.get("clarification_questions", [])
             reply = await self.generate(f"""The user said: "{message}"
-You need more info. Ask these questions naturally in a conversational way: {questions}
+You need a destination to proceed. Ask naturally in a conversational way.
 Also mention what you've understood so far from: {json.dumps(trip_context)}""")
             return {"reply": reply, "message_type": "text", "data": None, "trip_context": trip_context}
 
         # Step 3: Route to specialized agent
         if intent == "destination":
             data = await self.destination_agent.suggest_destinations(trip_context)
+            if isinstance(data, dict) and "error" in data:
+                reply = await self.generate(f"""The user asked: "{message}"
+Suggest popular travel destinations based on context: {json.dumps(trip_context)}
+Be warm and enthusiastic. Suggest 3-5 destinations.""")
+                return {"reply": reply, "message_type": "text", "data": None, "trip_context": trip_context}
             reply = await self.generate(f"""The user asked: "{message}"
 Here are destination suggestions: {json.dumps(data)}
 Present these destinations in a warm, exciting way. Mention key highlights and why each is a great fit.
@@ -127,6 +137,11 @@ Ask if they'd like to explore any of these further or generate a full itinerary.
                 passengers=trip_context.get("travelers", 1),
                 budget_max=trip_context.get("budget"),
             )
+            if isinstance(data, dict) and "error" in data:
+                reply = await self.generate(f"""The user asked about flights: "{message}"
+I couldn't fetch flight data right now. Apologize briefly and suggest trying again.
+Mention the route {origin} to {destination}.""")
+                return {"reply": reply, "message_type": "text", "data": None, "trip_context": trip_context}
             reply = await self.generate(f"""The user asked: "{message}"
 Here are flight results: {json.dumps(data)}
 Summarize the flight options briefly. Highlight the best value and cheapest options.
@@ -146,6 +161,11 @@ Ask if they want to book any or search for hotels next.""")
                 guests=trip_context.get("travelers", 1),
                 budget_max=trip_context.get("budget"),
             )
+            if isinstance(data, dict) and "error" in data:
+                reply = await self.generate(f"""The user asked about hotels: "{message}"
+I couldn't fetch hotel data right now. Apologize briefly and suggest trying again.
+Mention the destination {destination}.""")
+                return {"reply": reply, "message_type": "text", "data": None, "trip_context": trip_context}
             reply = await self.generate(f"""The user asked: "{message}"
 Here are hotel results: {json.dumps(data)}
 Summarize the hotel options. Highlight best value and highest rated.
@@ -167,6 +187,11 @@ Ask if they want to generate a full itinerary.""")
                 style=trip_context.get("travel_style", "balanced"),
                 total_budget=trip_context.get("budget"),
             )
+            if isinstance(data, dict) and "error" in data:
+                reply = await self.generate(f"""The user asked about budget: "{message}"
+I couldn't generate budget data right now. Apologize briefly and suggest trying again.
+Mention the destination {destination}.""")
+                return {"reply": reply, "message_type": "text", "data": None, "trip_context": trip_context}
             reply = await self.generate(f"""The user asked: "{message}"
 Here's the budget breakdown: {json.dumps(data)}
 Present the budget in a clear, friendly way. Mention if they're within budget.
@@ -198,6 +223,11 @@ Mention packing suggestions and any warnings.""")
                 preferences=trip_context.get("preferences", []),
                 travel_style=trip_context.get("travel_style", "balanced"),
             )
+            if isinstance(data, dict) and "error" in data:
+                reply = await self.generate(f"""The user asked for an itinerary: "{message}"
+I couldn't generate the itinerary data right now. Apologize briefly and suggest trying again.
+Mention the destination {destination}.""")
+                return {"reply": reply, "message_type": "text", "data": None, "trip_context": trip_context}
             reply = await self.generate(f"""The user asked: "{message}"
 Here's the itinerary: {json.dumps(data)}
 Give a brief, exciting summary of the trip plan. Mention highlights from each day.
